@@ -10,7 +10,7 @@ from rest_framework import  generics
 from rest_framework import status
 from rest_framework.decorators import api_view
 
-from .serializers import PostSerializer, ArticleSerializer
+from .serializers import PostSerializer, ArticleSerializer,ClubSerializer
 from .models import Post, Article, Club
 
 class PostView(mixins.ListModelMixin, mixins.CreateModelMixin, generics.GenericAPIView):
@@ -92,12 +92,12 @@ def article_detail(request, pk):
 class ClubAPIView(APIView):
 
     def get(self, request):
-        articles = Article.objects.all()
-        serializer = ArticleSerializer(articles, many=True)
+        articles = Club.objects.all()
+        serializer = ClubSerializer(articles, many=True)
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = ArticleSerializer(data=request.data)
+        serializer = ClubSerializer(data=request.data)
 
         if serializer.is_valid():
             serializer.save()
@@ -108,18 +108,18 @@ class ClubDetails(APIView):
 
     def get_object(self, id):
         try:
-            return Article.objects.get(id=id)
-        except Article.DoesNotExist:
+            return Club.objects.get(id=id)
+        except Club.DoesNotExist:
             return HttpResponse(status=status.HTTP_404_NOT_FOUND)
 
     def get(self, request, id):
-        article = self.get_object(id)
-        serializer = ArticleSerializer(article)
+        club = self.get_object(id)
+        serializer = ClubSerializer(club)
         return Response(serializer.data)
 
     def put(self, request, id):
-        article = self.get_object(id)
-        serializer = ArticleSerializer(article, data=request.data)
+        club = self.get_object(id)
+        serializer = ClubSerializer(club, data=request.data)
 
         if serializer.is_valid():
             serializer.save()
@@ -127,6 +127,28 @@ class ClubDetails(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, id):
-        article = self.get_object(id)
-        article.delete()
+        club = self.get_object(id)
+        club.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class GenericAPIView(generics.GenericAPIView, mixins.ListModelMixin, 
+                     mixins.CreateModelMixin, mixins.UpdateModelMixin, 
+                     mixins.RetrieveModelMixin, mixins.DestroyModelMixin):
+    serializer_class = ClubSerializer
+    queryset = Club.objects.all()
+    lookup_field = 'id'
+
+    def get(self, request, id=None, *args, **kwargs):
+        if id:
+            return self.retrieve(request)
+        else:
+            return self.list(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+    def put(self, request, id=None):
+        return self.update(request, id)
+
+    def delete(self, request, id=None):
+        return self.destroy(request, id)
